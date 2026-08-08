@@ -131,8 +131,9 @@
     font-size: 11px; font-weight: 500;
   }
 
-  .table-wrap { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #fff; }
-  .table-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table-wrap { border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; background: #fff; }
+  .table-wrap table { border-collapse: collapse; font-size: 14px; min-width: 100%; }
+  .table-wrap th { white-space: nowrap; }
   .table-wrap th {
     text-align: left; padding: 10px 12px; font-weight: 500; font-size: 12px;
     color: #6b7280; text-transform: lowercase; background: #f9fafb;
@@ -221,6 +222,40 @@
   .remark-text { font-size: 14px; color: #4b5563; line-height: 1.6; }
   .remark-empty { font-size: 13px; color: #9ca3af; font-style: italic; }
 
+  .table-scroll { overflow-x: auto; }
+  .table-scroll table { min-width: 1600px; }
+  .table-scroll th, .table-scroll td { white-space: nowrap; }
+  .cat-header {
+    background: #f3f4f6 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    text-align: center !important;
+    border-bottom: 2px solid #d1d5db !important;
+  }
+  .q-header {
+    font-size: 11px !important;
+    color: #6b7280 !important;
+    text-align: center !important;
+    min-width: 50px;
+  }
+  .q-score {
+    text-align: center !important;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+  }
+  .q-score.na { color: #9ca3af; font-style: italic; }
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 10;
+    border-right: 1px solid #e5e7eb;
+  }
+  .sticky-col.header { background: #f9fafb; }
+  .table-scroll tr:hover .sticky-col { background: #f9fafb; }
+  .table-scroll tr.evaluatee .sticky-col { background: #f0fdf4; }
+
   .hidden { display: none !important; }
   .empty-state { text-align: center; padding: 48px; color: #9ca3af; }
 
@@ -238,7 +273,13 @@
     .panel { border: 1px solid #e5e7eb; padding: 12px; page-break-inside: avoid; }
     .bar-track { background: #e5e7eb !important; height: 16px; }
     .bar-fill { height: 100% !important; display: block !important; }
-    .table-wrap { border: 1px solid #e5e7eb; }
+    .table-wrap { border: 1px solid #e5e7eb; overflow-x: visible; }
+    .table-wrap table { font-size: 9px; }
+    .table-wrap th, .table-wrap td { padding: 3px 4px; }
+    .table-scroll { overflow: visible !important; }
+    .table-scroll table { min-width: 100% !important; }
+    .sticky-col { position: static !important; background: #fff !important; border-right: 1px solid #e5e7eb !important; }
+    .cat-header { background: #e5e7eb !important; }
     #tableView, #summaryView, #remarksView { display: block !important; }
     #tableView.hidden, #summaryView.hidden, #remarksView.hidden { display: block !important; }
     .container { max-width: 100%; }
@@ -358,12 +399,12 @@
               <th onclick="sortTable('rank')">Rank</th>
               <th onclick="sortTable('name')">Evaluator name</th>
               <th onclick="sortTable('overall')">Overall</th>
-              <th onclick="sortTable('comm')">Comm.</th>
-              <th onclick="sortTable('admin')">Admin</th>
-              <th onclick="sortTable('lead')">Leadership</th>
-              <th onclick="sortTable('integ')">Integrity</th>
-              <th onclick="sortTable('super')">Supervision</th>
-              <th onclick="sortTable('attend')">Attendance</th>
+              <th onclick="sortTable('comm')" title="Communication & Community Relations">Comm. Rel.</th>
+              <th onclick="sortTable('admin')" title="Administrative Functions">Admin. Func.</th>
+              <th onclick="sortTable('lead')" title="Leadership & Benedictine Values">Leadership</th>
+              <th onclick="sortTable('integ')" title="Personal & Professional Qualities">Qualities</th>
+              <th onclick="sortTable('super')" title="Supervision & People Development">Sup. & Dev.</th>
+              <th onclick="sortTable('attend')" title="Attendance & Punctuality">Attendance</th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -437,7 +478,7 @@ function recomputeStats() {
   }
 
   const overallScores = visibleTeachers.map(t => t.overall);
-  const catNames = ['Communication & Community', 'Administrative Functions', 'Leadership & Mission', 'Personal & Professional Integrity', 'Supervision', 'Attendance & Punctuality'];
+  const catNames = ['Communication & Community Relations', 'Administrative Functions', 'Leadership & Benedictine Values', 'Personal & Professional Qualities', 'Supervision & People Development', 'Attendance & Punctuality'];
   const catAvgs = {};
   catNames.forEach(cat => {
     const vals = visibleTeachers.map(t => t.categories[cat] || 0).filter(v => v > 0);
@@ -504,11 +545,11 @@ function renderTable() {
       <td><span class="rank-badge ${rank <= 10 ? 'top' : ''}">#${rank}</span></td>
       <td>${t.name}</td>
       <td class="score ${getScoreClass(t.overall)}">${t.overall.toFixed(2)}</td>
-      <td class="score">${(t.categories['Communication & Community'] || 0).toFixed(2)}</td>
+      <td class="score">${(t.categories['Communication & Community Relations'] || 0).toFixed(2)}</td>
       <td class="score">${(t.categories['Administrative Functions'] || 0).toFixed(2)}</td>
-      <td class="score">${(t.categories['Leadership & Mission'] || 0).toFixed(2)}</td>
-      <td class="score">${(t.categories['Personal & Professional Integrity'] || 0).toFixed(2)}</td>
-      <td class="score">${(t.categories['Supervision'] || 0).toFixed(2)}</td>
+      <td class="score">${(t.categories['Leadership & Benedictine Values'] || 0).toFixed(2)}</td>
+      <td class="score">${(t.categories['Personal & Professional Qualities'] || 0).toFixed(2)}</td>
+      <td class="score">${(t.categories['Supervision & People Development'] || 0).toFixed(2)}</td>
       <td class="score">${(t.categories['Attendance & Punctuality'] || 0).toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
@@ -554,11 +595,11 @@ function toggleHiddenSection() {
 
 function renderSummary() {
   const cats = [
-    { name: 'Communication & Community', avg: stats.category_averages['Communication & Community'] || 0 },
+    { name: 'Communication & Community Relations', avg: stats.category_averages['Communication & Community Relations'] || 0 },
     { name: 'Administrative Functions', avg: stats.category_averages['Administrative Functions'] || 0 },
-    { name: 'Leadership & Mission', avg: stats.category_averages['Leadership & Mission'] || 0 },
-    { name: 'Personal & Professional Integrity', avg: stats.category_averages['Personal & Professional Integrity'] || 0 },
-    { name: 'Supervision', avg: stats.category_averages['Supervision'] || 0 },
+    { name: 'Leadership & Benedictine Values', avg: stats.category_averages['Leadership & Benedictine Values'] || 0 },
+    { name: 'Personal & Professional Qualities', avg: stats.category_averages['Personal & Professional Qualities'] || 0 },
+    { name: 'Supervision & People Development', avg: stats.category_averages['Supervision & People Development'] || 0 },
     { name: 'Attendance & Punctuality', avg: stats.category_averages['Attendance & Punctuality'] || 0 },
   ];
   const colors = ['c1','c2','c3','c4','c5','c6'];
@@ -588,11 +629,11 @@ function sortTable(key) {
     let va, vb;
     if (key === 'name') { va = a.name; vb = b.name; }
     else if (key === 'overall') { va = a.overall; vb = b.overall; }
-    else if (key === 'comm') { va = a.categories['Communication & Community'] || 0; vb = b.categories['Communication & Community'] || 0; }
+    else if (key === 'comm') { va = a.categories['Communication & Community Relations'] || 0; vb = b.categories['Communication & Community Relations'] || 0; }
     else if (key === 'admin') { va = a.categories['Administrative Functions'] || 0; vb = b.categories['Administrative Functions'] || 0; }
-    else if (key === 'lead') { va = a.categories['Leadership & Mission'] || 0; vb = b.categories['Leadership & Mission'] || 0; }
-    else if (key === 'integ') { va = a.categories['Personal & Professional Integrity'] || 0; vb = b.categories['Personal & Professional Integrity'] || 0; }
-    else if (key === 'super') { va = a.categories['Supervision'] || 0; vb = b.categories['Supervision'] || 0; }
+    else if (key === 'lead') { va = a.categories['Leadership & Benedictine Values'] || 0; vb = b.categories['Leadership & Benedictine Values'] || 0; }
+    else if (key === 'integ') { va = a.categories['Personal & Professional Qualities'] || 0; vb = b.categories['Personal & Professional Qualities'] || 0; }
+    else if (key === 'super') { va = a.categories['Supervision & People Development'] || 0; vb = b.categories['Supervision & People Development'] || 0; }
     else if (key === 'attend') { va = a.categories['Attendance & Punctuality'] || 0; vb = b.categories['Attendance & Punctuality'] || 0; }
     else { va = a.overall; vb = b.overall; }
     if (typeof va === 'string') return va.localeCompare(vb) * dir;
@@ -665,7 +706,7 @@ function renderRemarks() {
 }
 
 function sum(arr) { return arr.reduce((a, b) => a + b, 0); }
-function round(n) { return Math.round(n * 100) / 100; }
+function round(n) { return parseFloat(n.toFixed(2)); }
 
 function showDashboard() {
   document.getElementById('welcomeState').classList.add('hidden');
@@ -695,22 +736,32 @@ function parseXLSX(arrayBuffer) {
     }
   }
 
+  function getCategoryFromHeader(header) {
+    if (header.includes('COMMUNICATION AND COMMUNITY')) return 'Communication & Community Relations';
+    if (header.includes('ADMINISTRATIVE FUNCTIONS')) return 'Administrative Functions';
+    if (header.includes('Q00_III')) return 'Leadership & Benedictine Values';
+    if (header.includes('Q00_IV')) return 'Personal & Professional Qualities';
+    if (header.includes('SUPERVISION')) return 'Supervision & People Development';
+    if (header.includes('ATTENDANCE AND PUNCTUALITY')) return 'Attendance & Punctuality';
+    return 'Other';
+  }
+
   const catMap = {
-    'Communication & Community': [],
+    'Communication & Community Relations': [],
     'Administrative Functions': [],
-    'Leadership & Mission': [],
-    'Personal & Professional Integrity': [],
-    'Supervision': [],
+    'Leadership & Benedictine Values': [],
+    'Personal & Professional Qualities': [],
+    'Supervision & People Development': [],
     'Attendance & Punctuality': []
   };
 
   questionCols.forEach(q => {
     const h = q.header;
-    if (h.includes('COMMUNICATION AND COMMUNITY')) catMap['Communication & Community'].push(q);
+    if (h.includes('COMMUNICATION AND COMMUNITY')) catMap['Communication & Community Relations'].push(q);
     else if (h.includes('ADMINISTRATIVE FUNCTIONS')) catMap['Administrative Functions'].push(q);
-    else if (h.includes('Q00_III')) catMap['Leadership & Mission'].push(q);
-    else if (h.includes('Q00_IV')) catMap['Personal & Professional Integrity'].push(q);
-    else if (h.includes('SUPERVISION')) catMap['Supervision'].push(q);
+    else if (h.includes('Q00_III')) catMap['Leadership & Benedictine Values'].push(q);
+    else if (h.includes('Q00_IV')) catMap['Personal & Professional Qualities'].push(q);
+    else if (h.includes('SUPERVISION')) catMap['Supervision & People Development'].push(q);
     else if (h.includes('ATTENDANCE AND PUNCTUALITY')) catMap['Attendance & Punctuality'].push(q);
   });
 
@@ -744,8 +795,25 @@ function parseXLSX(arrayBuffer) {
     let remark = '';
     const lastIdx = headers.length - 1;
     if (lastIdx > fullNameIdx && row[lastIdx] !== undefined && row[lastIdx] !== null) {
-      remark = String(row[lastIdx]).trim();
+      const lastVal = String(row[lastIdx]).trim();
+      if (!lastVal.match(/^\d+(\.\d+)?$/) && lastVal.length > 1) {
+        remark = lastVal;
+      }
     }
+
+    // Capture individual question scores
+    const questionScores = [];
+    questionCols.forEach(q => {
+      const v = row[q.idx];
+      const score = (v !== undefined && v !== null && v !== '' && v !== -1 && v !== '-1')
+        ? (parseFloat(v) || 0) : null;
+      questionScores.push({
+        idx: q.idx,
+        header: q.header,
+        category: getCategoryFromHeader(q.header),
+        score: score
+      });
+    });
 
     teachersData.push({
       name: String(name).trim(),
@@ -753,10 +821,22 @@ function parseXLSX(arrayBuffer) {
       overall: overall,
       categories: catScores,
       hidden: false,
-      remark: remark
+      remark: remark,
+      questions: questionScores
     });
   }
 
+  // Store question metadata for table rendering
+  window.questionMeta = questionCols.map((q, i) => ({
+    label: 'Q' + (i + 1),
+    fullText: q.header.split('->').pop().trim(),
+    category: q.header.includes('COMMUNICATION') ? 'I' :
+              q.header.includes('ADMINISTRATIVE') ? 'II' :
+              q.header.includes('Q00_III') ? 'III' :
+              q.header.includes('Q00_IV') ? 'IV' :
+              q.header.includes('SUPERVISION') ? 'V' :
+              q.header.includes('ATTENDANCE') ? 'VI' : '?'
+  }));
   return { teachers: teachersData, catMap };
 }
 
