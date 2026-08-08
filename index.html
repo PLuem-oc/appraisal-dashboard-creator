@@ -260,29 +260,55 @@
   .empty-state { text-align: center; padding: 48px; color: #9ca3af; }
 
   @media print {
+    @page { size: landscape; margin: 0.4cm; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     body { padding: 0; background: #fff; }
     .upload-area, .controls, .welcome, .print-btn, .view-toggle, .search-box,
     .hide-btn, .hidden-toggle, .hidden-section, .restore-btn { display: none !important; }
-    .header { margin-bottom: 16px; }
-    .evaluatee-card { border: 1px solid #e5e7eb; page-break-inside: avoid; }
-    .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; page-break-inside: avoid; }
-    .stat-card { padding: 12px; border: 1px solid #e5e7eb; }
-    .stat-value { font-size: 22px; }
-    .summary-grid { grid-template-columns: 1fr 1fr; gap: 12px; display: grid !important; }
-    .panel { border: 1px solid #e5e7eb; padding: 12px; page-break-inside: avoid; }
-    .bar-track { background: #e5e7eb !important; height: 16px; }
+    .header { margin-bottom: 12px; }
+    .header h1 { font-size: 18px; }
+    .evaluatee-card { border: 1px solid #e5e7eb; page-break-inside: avoid; padding: 12px; margin-bottom: 12px; }
+    .evaluatee-avatar { width: 40px; height: 40px; font-size: 14px; }
+    .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; page-break-inside: avoid; margin-bottom: 12px; }
+    .stat-card { padding: 8px; border: 1px solid #e5e7eb; }
+    .stat-value { font-size: 18px; }
+    .summary-grid { grid-template-columns: 1fr 1fr; gap: 10px; display: grid !important; }
+    .panel { border: 1px solid #e5e7eb; padding: 10px; page-break-inside: avoid; }
+    .bar-track { background: #e5e7eb !important; height: 14px; }
     .bar-fill { height: 100% !important; display: block !important; }
+
+    /* Table view print */
     .table-wrap { border: 1px solid #e5e7eb; overflow-x: visible; }
     .table-wrap table { font-size: 9px; }
     .table-wrap th, .table-wrap td { padding: 3px 4px; }
-    .table-scroll { overflow: visible !important; }
-    .table-scroll table { min-width: 100% !important; }
+
+    /* Detailed view print - make it fit */
+    #detailedView .table-wrap { overflow-x: visible !important; border: 1px solid #e5e7eb; }
+    #detailedView .table-scroll { overflow: visible !important; }
+    #detailedView .table-scroll table { min-width: auto !important; width: 100% !important; table-layout: fixed; font-size: 7px !important; }
+    #detailedView .table-scroll th,
+    #detailedView .table-scroll td { padding: 1px 2px !important; white-space: normal !important; word-break: break-word; overflow: hidden; }
+    #detailedView .sticky-col { position: static !important; background: #fff !important; border-right: 1px solid #e5e7eb !important; width: auto !important; min-width: auto !important; }
+    #detailedView .q-header {
+      font-size: 5px !important;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      min-width: 10px !important;
+      max-width: 14px;
+      height: 50px;
+      vertical-align: bottom;
+      padding: 2px 1px !important;
+      line-height: 1.1;
+      white-space: nowrap !important;
+    }
+    #detailedView .q-score { font-size: 7px !important; padding: 1px !important; }
+
     .sticky-col { position: static !important; background: #fff !important; border-right: 1px solid #e5e7eb !important; }
     .cat-header { background: #e5e7eb !important; }
-    #tableView, #summaryView, #remarksView { display: block !important; }
-    #tableView.hidden, #summaryView.hidden, #remarksView.hidden { display: block !important; }
-    .container { max-width: 100%; }
+    #tableView, #summaryView, #remarksView, #detailedView { display: block !important; }
+    #tableView.hidden, #summaryView.hidden, #remarksView.hidden, #detailedView.hidden { display: block !important; }
+    .container { max-width: 100%; padding: 12px; }
     .rank-list { max-height: none; overflow: visible; }
   }
 </style>
@@ -363,6 +389,7 @@
     <div class="controls">
       <div class="view-toggle">
         <button class="active" data-view="table" onclick="switchView('table')">Table</button>
+        <button data-view="detailed" onclick="switchView('detailed')">Detailed</button>
         <button data-view="summary" onclick="switchView('summary')">Summary</button>
         <button data-view="remarks" onclick="switchView('remarks')">Remarks</button>
       </div>
@@ -422,6 +449,15 @@
       </div>
     </div>
 
+    <div id="detailedView" class="hidden">
+      <div class="table-wrap table-scroll">
+        <table id="detailedTable">
+          <thead id="detailedHead"></thead>
+          <tbody id="detailedBody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="summaryView" class="hidden">
       <div class="summary-grid">
         <div class="panel">
@@ -429,7 +465,7 @@
           <div id="categoryBars"></div>
         </div>
         <div class="panel">
-          <h3>Top 15 evaluators scores</h3>
+          <h3>top evaluators scores</h3>
           <div class="rank-list" id="rankList"></div>
         </div>
       </div>
@@ -642,17 +678,66 @@ function sortTable(key) {
   renderTable();
 }
 
-function filterTable() { renderTable(); }
+function filterTable() {
+  renderTable();
+  if (!document.getElementById('detailedView').classList.contains('hidden')) {
+    renderDetailed();
+  }
+}
 
 function switchView(view) {
   document.querySelectorAll('.view-toggle button').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   document.getElementById('tableView').classList.toggle('hidden', view !== 'table');
+  document.getElementById('detailedView').classList.toggle('hidden', view !== 'detailed');
   document.getElementById('summaryView').classList.toggle('hidden', view !== 'summary');
   document.getElementById('remarksView').classList.toggle('hidden', view !== 'remarks');
   const printBtn = document.getElementById('printBtn');
-  if (printBtn) printBtn.classList.toggle('hidden', view !== 'summary');
+  if (printBtn) printBtn.classList.toggle('hidden', view !== 'summary' && view !== 'detailed');
+  if (view === 'detailed') renderDetailed();
   if (view === 'summary') renderSummary();
   if (view === 'remarks') renderRemarks();
+}
+
+function renderDetailed() {
+  const thead = document.getElementById('detailedHead');
+  const tbody = document.getElementById('detailedBody');
+  const filter = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = visibleTeachers.filter(t => t.name.toLowerCase().includes(filter));
+  const meta = window.questionMeta || [];
+  const catColors = { 'I': '#3b82f6', 'II': '#ef4444', 'III': '#22c55e', 'IV': '#a855f7', 'V': '#f59e0b', 'VI': '#0ea5e9' };
+
+  let headerHTML = '<tr><th class="sticky-col header" style="min-width:180px">Evaluator</th><th class="sticky-col header" style="left:180px;min-width:60px">Overall</th>';
+  meta.forEach((q, i) => {
+    const color = catColors[q.category] || '#6b7280';
+    headerHTML += `<th class="q-header" title="${q.fullText}" style="border-bottom:2px solid ${color}">${q.label}</th>`;
+  });
+  headerHTML += '</tr>';
+  thead.innerHTML = headerHTML;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${meta.length + 2}" class="empty-state">No evaluators found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(t => {
+    const isEvaluatee = evaluatee && !evaluatee.notInData && t.name === evaluatee.name;
+    const tr = document.createElement('tr');
+    if (isEvaluatee) tr.className = 'evaluatee';
+
+    let rowHTML = `<td class="sticky-col" style="min-width:180px;font-weight:500">${t.name}</td>`;
+    rowHTML += `<td class="sticky-col score ${getScoreClass(t.overall)}" style="left:180px;min-width:60px;font-weight:600">${t.overall.toFixed(2)}</td>`;
+
+    t.questions.forEach((q, i) => {
+      const m = meta[i] || {};
+      const color = catColors[m.category] || '#6b7280';
+      const cellStyle = q.score !== null ? `background: ${color}12` : '';
+      rowHTML += `<td class="q-score ${q.score === null ? 'na' : ''}" style="${cellStyle}">${q.score !== null ? q.score : '—'}</td>`;
+    });
+    rowHTML += '</tr>';
+    tr.innerHTML = rowHTML;
+    tbody.appendChild(tr);
+  });
 }
 
 function getInitials(name) {
@@ -901,6 +986,9 @@ function handleFileUpload(file, statusEl) {
       renderTable();
       renderSummary();
       renderRemarks();
+      if (!document.getElementById('detailedView').classList.contains('hidden')) {
+        renderDetailed();
+      }
 
       statusEl.textContent = `Loaded ${allTeachers.length} evaluator records from ${file.name}`;
       statusEl.className = 'upload-status success';
